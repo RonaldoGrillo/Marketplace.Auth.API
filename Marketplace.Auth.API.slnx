@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Marketplace.Auth.API/Marketplace.Auth.API.csproj" />
+  <Project Path="Marketplace.Auth.Aplicacao/Marketplace.Auth.Aplicacao.csproj" />
+  <Project Path="Marketplace.Auth.Dominio/Marketplace.Auth.Dominio.csproj" />
+  <Project Path="Marketplace.Auth.Repositorio/Marketplace.Auth.Repositorio.csproj" />
+  <Project Path="Marketplace.Auth.Utils/Marketplace.Auth.Utils.csproj" />
+</Solution>

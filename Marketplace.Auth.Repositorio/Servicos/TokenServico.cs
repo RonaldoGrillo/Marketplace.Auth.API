@@ -1,11 +1,11 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using Marketplace.Auth.Aplicacao.Interfaces;
+﻿using Marketplace.Auth.Aplicacao.Interfaces;
 using Marketplace.Auth.Dominio.Entidades;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Marketplace.Auth.Repositorio.Servicos;
 
@@ -39,10 +39,10 @@ public class TokenServico(IConfiguration configuration) : ITokenServico
     public RefreshToken GerarRefreshToken(Guid usuarioId)
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-        var expiraEm = DateTime.UtcNow.AddDays(
+        var expiresIn = DateTime.UtcNow.AddDays(
             int.Parse(configuration["Jwt:RefreshTokenExpiracaoDias"] ?? "7"));
 
-        return RefreshToken.Criar(token, usuarioId, expiraEm);
+        return RefreshToken.Criar(token, usuarioId, expiresIn);
     }
 
     public Guid? ObterUsuarioIdDoToken(string token)

@@ -192,7 +192,7 @@ Não requer autenticação.
 {
   "accessToken": "eyJhbGci...",
   "refreshToken": "GC5KxMwi...",
-  "expiraEm": "2026-04-30T15:01:18Z",
+  "expiresIn": "2026-04-30T15:01:18Z",
   "usuarioId": "a7ebcf6b-dc0c-4d43-ae77-eff70a77fc64",
   "nome": "Ronaldo Grillo",
   "email": "usuario@email.com"
@@ -220,7 +220,7 @@ Não requer autenticação.
 {
   "accessToken": "eyJhbGci...",
   "refreshToken": "novo_refresh_token...",
-  "expiraEm": "2026-04-30T16:00:00Z"
+  "expiresIn": "2026-04-30T16:00:00Z"
 }
 ```
 

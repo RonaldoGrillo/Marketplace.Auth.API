@@ -13,7 +13,7 @@ public class Usuario
     public DateTime CriadoEm { get; private set; }
     public DateTime? AtualizadoEm { get; private set; }
     public string? TokenRedefinicaoSenha { get; private set; }
-    public DateTime? TokenRedefinicaoSenhaExpiraEm { get; private set; }
+    public DateTime? TokenRedefinicaoSenhaExpiresIn { get; private set; }
 
     private readonly List<RefreshToken> _refreshTokens = [];
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
@@ -47,16 +47,16 @@ public class Usuario
         AtualizadoEm = DateTime.UtcNow;
     }
 
-    public void DefinirTokenRedefinicaoSenha(string token, DateTime expiraEm)
+    public void DefinirTokenRedefinicaoSenha(string token, DateTime expiresIn)
     {
         TokenRedefinicaoSenha = token;
-        TokenRedefinicaoSenhaExpiraEm = expiraEm;
+        TokenRedefinicaoSenhaExpiresIn = expiresIn;
     }
 
     public void LimparTokenRedefinicaoSenha()
     {
         TokenRedefinicaoSenha = null;
-        TokenRedefinicaoSenhaExpiraEm = null;
+        TokenRedefinicaoSenhaExpiresIn = null;
     }
 
     public void Desativar() => Status = EUsuarioStatus.Inativo;

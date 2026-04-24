@@ -20,7 +20,7 @@ public sealed class ResetarSenhaCommandHandler(IUsuarioRepositorio repositorio, 
             ?? throw new UsuarioNaoEncontradoException(request.Email);
 
         if (usuario.TokenRedefinicaoSenha != request.Token ||
-            usuario.TokenRedefinicaoSenhaExpiraEm < DateTime.UtcNow)
+            usuario.TokenRedefinicaoSenhaExpiresIn < DateTime.UtcNow)
             throw new DominioException("Token de redefinição inválido ou expirado.");
 
         var senhaHash = senhaCriptografia.Criptografar(request.NovaSenha);

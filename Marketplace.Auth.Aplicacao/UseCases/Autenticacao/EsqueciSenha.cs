@@ -16,9 +16,9 @@ public sealed class EsqueciSenhaCommandHandler(IUsuarioRepositorio repositorio, 
             ?? throw new UsuarioNaoEncontradoException(request.Email);
 
         var token = Guid.NewGuid().ToString("N");
-        var expiraEm = DateTime.UtcNow.AddHours(2);
+        var expiresIn = DateTime.UtcNow.AddHours(2);
 
-        usuario.DefinirTokenRedefinicaoSenha(token, expiraEm);
+        usuario.DefinirTokenRedefinicaoSenha(token, expiresIn);
         await repositorio.AtualizarAsync(usuario, cancellationToken);
 
         var corpo = $"Use o token abaixo para redefinir sua senha (válido por 2 horas):\n\n{token}";

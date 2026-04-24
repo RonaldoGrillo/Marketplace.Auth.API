@@ -3,4 +3,4 @@
 public record TokenDto(
     string AccessToken,
     string RefreshToken,
-    DateTime ExpiraEm);
+    DateTime ExpiresIn);

@@ -4,28 +4,28 @@ public class RefreshToken
 {
     public Guid Id { get; private set; }
     public string Token { get; private set; } = string.Empty;
-    public DateTime ExpiraEm { get; private set; }
+    public DateTime ExpiresIn { get; private set; }
     public DateTime CriadoEm { get; private set; }
     public bool Revogado { get; private set; }
     public Guid UsuarioId { get; private set; }
-    public Usuario? Usuario { get; private set; }
+    public virtual Usuario? Usuario { get; private set; }
 
     protected RefreshToken() { }
 
-    public static RefreshToken Criar(string token, Guid usuarioId, DateTime expiraEm)
+    public static RefreshToken Criar(string token, Guid usuarioId, DateTime expiresIn)
     {
         return new RefreshToken
         {
             Id = Guid.NewGuid(),
             Token = token,
             UsuarioId = usuarioId,
-            ExpiraEm = expiraEm,
+            ExpiresIn = expiresIn,
             CriadoEm = DateTime.UtcNow,
             Revogado = false
         };
     }
 
-    public bool EstaValido() => !Revogado && ExpiraEm > DateTime.UtcNow;
+    public bool EstaValido() => !Revogado && ExpiresIn > DateTime.UtcNow;
 
     public void Revogar() => Revogado = true;
 }

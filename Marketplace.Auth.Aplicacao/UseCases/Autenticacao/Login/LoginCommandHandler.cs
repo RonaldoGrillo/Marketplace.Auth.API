@@ -24,7 +24,7 @@ public sealed class LoginCommandHandler(IUsuarioRepositorio repositorio, ISenhaC
         return new LoginResponse(
             accessToken,
             refreshToken.Token,
-            refreshToken.ExpiraEm,
+            refreshToken.ExpiresIn,
             usuario.Id,
             usuario.Nome,
             usuario.Email);

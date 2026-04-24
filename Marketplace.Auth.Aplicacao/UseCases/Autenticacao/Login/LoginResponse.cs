@@ -3,7 +3,7 @@
 public record LoginResponse(
     string AccessToken,
     string RefreshToken,
-    DateTime ExpiraEm,
+    DateTime ExpiresIn,
     Guid UsuarioId,
     string Nome,
     string Email);

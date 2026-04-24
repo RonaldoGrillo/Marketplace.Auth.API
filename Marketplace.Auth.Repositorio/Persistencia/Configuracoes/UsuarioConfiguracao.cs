@@ -16,13 +16,13 @@ public class UsuarioConfiguracao : IEntityTypeConfiguration<Usuario>
 
         builder.Property(u => u.Nome).HasColumnName("usu_nome").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(150)).IsRequired();
         builder.Property(u => u.Email).HasColumnName("usu_email").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(256)).IsRequired();
-        builder.Property(u => u.SenhaHash).HasColumnName("usu_senha_hash").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(60)).IsRequired();
+        builder.Property(u => u.SenhaHash).HasColumnName("usu_senhahash").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(60)).IsRequired();
         builder.Property(u => u.Funcao).HasColumnName("usu_funcao").HasColumnType(PostgreSqlTipo.Smallint.ParaSql()).IsRequired();
         builder.Property(u => u.Status).HasColumnName("usu_status").HasColumnType(PostgreSqlTipo.Smallint.ParaSql()).IsRequired();
-        builder.Property(u => u.CriadoEm).HasColumnName("usu_criado_em").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql()).IsRequired();
-        builder.Property(u => u.AtualizadoEm).HasColumnName("usu_atualizado_em").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql());
-        builder.Property(u => u.TokenRedefinicaoSenha).HasColumnName("usu_token_redefinicao_senha").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(36));
-        builder.Property(u => u.TokenRedefinicaoSenhaExpiraEm).HasColumnName("usu_token_redefinicao_senha_expira_em").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql());
+        builder.Property(u => u.CriadoEm).HasColumnName("usu_criadoem").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql()).IsRequired();
+        builder.Property(u => u.AtualizadoEm).HasColumnName("usu_atualizadoem").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql());
+        builder.Property(u => u.TokenRedefinicaoSenha).HasColumnName("usu_token_redefinicaosenha").HasColumnType(PostgreSqlTipo.CharacterVarying.ParaSql(36));
+        builder.Property(u => u.TokenRedefinicaoSenhaExpiresIn).HasColumnName("usu_tokenredefinicaosenhaexpiresin").HasColumnType(PostgreSqlTipo.TimestampWithTimeZone.ParaSql());
 
         builder.HasIndex(u => u.Email).IsUnique();
 

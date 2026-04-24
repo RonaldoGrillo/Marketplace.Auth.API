@@ -16,10 +16,13 @@ public sealed class LoginCommandHandler(IUsuarioRepositorio repositorio, ISenhaC
         if (!senhaCriptografia.Verificar(request.Senha, usuario.SenhaHash))
             throw new CredenciaisInvalidasException();
 
+        await repositorio.RevogarTodosRefreshTokensAsync(usuario.Id, cancellationToken);
+
         var accessToken = tokenServico.GerarAccessToken(usuario);
         var refreshToken = tokenServico.GerarRefreshToken(usuario.Id);
 
         await repositorio.AdicionarRefreshTokenAsync(refreshToken, cancellationToken);
+        await repositorio.DeletarRefreshTokensRevogadosAsync(usuario.Id, cancellationToken);
 
         return new LoginResponse(
             accessToken,

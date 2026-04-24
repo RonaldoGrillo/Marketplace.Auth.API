@@ -53,4 +53,18 @@ public class UsuarioRepositorio(AuthDbContexto contexto) : IUsuarioRepositorio
         contexto.RefreshTokens.Update(refreshToken);
         await contexto.SaveChangesAsync(ct);
     }
+
+    public async Task RevogarTodosRefreshTokensAsync(Guid usuarioId, CancellationToken ct = default)
+    {
+        await contexto.RefreshTokens
+            .Where(rt => rt.UsuarioId == usuarioId && !rt.Revogado)
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.Revogado, true), ct);
+    }
+
+    public async Task DeletarRefreshTokensRevogadosAsync(Guid usuarioId, CancellationToken ct = default)
+    {
+        await contexto.RefreshTokens
+            .Where(rt => rt.UsuarioId == usuarioId && rt.Revogado)
+            .ExecuteDeleteAsync(ct);
+    }
 }

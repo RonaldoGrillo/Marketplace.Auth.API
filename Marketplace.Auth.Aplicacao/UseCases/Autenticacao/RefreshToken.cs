@@ -28,6 +28,7 @@ public sealed class RefreshTokenCommandHandler(IUsuarioRepositorio repositorio, 
         var novoRefreshToken = tokenServico.GerarRefreshToken(usuario.Id);
 
         await repositorio.AdicionarRefreshTokenAsync(novoRefreshToken, cancellationToken);
+        await repositorio.DeletarRefreshTokensRevogadosAsync(usuario.Id, cancellationToken);
 
         return new TokenDto(novoAccessToken, novoRefreshToken.Token, novoRefreshToken.ExpiresIn);
     }

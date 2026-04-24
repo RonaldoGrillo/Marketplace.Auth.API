@@ -16,7 +16,7 @@ public sealed class RefreshTokenCommandHandler(IUsuarioRepositorio repositorio, 
         var tokenExistente = await repositorio.ObterRefreshTokenAsync(request.Token, cancellationToken)
             ?? throw new DominioException("Refresh token inválido ou expirado.");
 
-        if (!tokenExistente.EstaValido())
+        if (!tokenExistente.Valido())
             throw new DominioException("Refresh token inválido ou expirado.");
 
         var usuario = await repositorio.ObterPorIdAsync(tokenExistente.UsuarioId, cancellationToken)

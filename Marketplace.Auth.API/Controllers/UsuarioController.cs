@@ -1,6 +1,7 @@
 using Marketplace.Auth.Aplicacao.DTOs;
 using Marketplace.Auth.Aplicacao.UseCases.Usuarios;
 using Marketplace.Auth.Aplicacao.UseCases.Usuarios.CriarUsuario;
+using Marketplace.Auth.Dominio.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ public class UsuarioController(IMediator mediator) : ControladorBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = nameof(EUsuarioFuncao.Administrador))]
     public async Task<IActionResult> Deletar(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeletarUsuarioCommand(id), ct);

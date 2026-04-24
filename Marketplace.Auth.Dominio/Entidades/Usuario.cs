@@ -18,8 +18,6 @@ public class Usuario
     private readonly List<RefreshToken> _refreshTokens = [];
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
-    protected Usuario() { }
-
     public static Usuario Criar(string nome, string email, string senhaHash, EUsuarioFuncao funcao)
     {
         return new Usuario
@@ -59,5 +57,7 @@ public class Usuario
         TokenRedefinicaoSenhaExpiresIn = null;
     }
 
-    public void Desativar() => Status = EUsuarioStatus.Inativo;
+    public void Inativar() => Status = EUsuarioStatus.Inativo;
+
+    public void Suspender() => Status = EUsuarioStatus.Suspenso;
 }

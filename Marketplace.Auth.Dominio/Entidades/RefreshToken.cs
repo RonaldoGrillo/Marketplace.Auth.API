@@ -10,8 +10,6 @@ public class RefreshToken
     public Guid UsuarioId { get; private set; }
     public virtual Usuario? Usuario { get; private set; }
 
-    protected RefreshToken() { }
-
     public static RefreshToken Criar(string token, Guid usuarioId, DateTime expiresIn)
     {
         return new RefreshToken
@@ -25,7 +23,7 @@ public class RefreshToken
         };
     }
 
-    public bool EstaValido() => !Revogado && ExpiresIn > DateTime.UtcNow;
+    public bool Valido() => !Revogado && ExpiresIn > DateTime.UtcNow;
 
     public void Revogar() => Revogado = true;
 }

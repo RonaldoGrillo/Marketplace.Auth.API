@@ -54,3 +54,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 await app.RunAsync();
+
+// Necessário para WebApplicationFactory nos testes de integração
+public partial class Program { }

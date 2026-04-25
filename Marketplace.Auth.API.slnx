@@ -3,5 +3,6 @@
   <Project Path="Marketplace.Auth.Aplicacao/Marketplace.Auth.Aplicacao.csproj" />
   <Project Path="Marketplace.Auth.Dominio/Marketplace.Auth.Dominio.csproj" />
   <Project Path="Marketplace.Auth.Repositorio/Marketplace.Auth.Repositorio.csproj" />
+  <Project Path="Marketplace.Auth.Test/Marketplace.Auth.Test.csproj" Id="5a2d3582-e111-4664-a707-9a0596973123" />
   <Project Path="Marketplace.Auth.Utils/Marketplace.Auth.Utils.csproj" />
 </Solution>

@@ -107,7 +107,7 @@ Use o endpoint `refresh-token` para renová-lo sem precisar fazer login novament
 
 ## 📡 Endpoints
 
-**Base URL:** `https://localhost:8100`
+**Base URL:** `http://usuario.neurosky.com.br`
 
 ---
 

@@ -5,7 +5,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "http://localhost:8101",
+      "applicationUrl": "http://usuario.neurosky.com.br",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

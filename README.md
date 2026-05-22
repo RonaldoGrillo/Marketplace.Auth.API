@@ -1,62 +1,8 @@
 # Marketplace.Auth.API
 
-API RESTful de autenticação e gerenciamento de usuários para o ecossistema Marketplace.  
-Desenvolvida em **.NET 10**, seguindo os princípios de **Clean Architecture** e **CQRS** com MediatR.
+API RESTful de autenticação e gerenciamento de usuários para o ecossistema Marketplace.
 
----
-
-## 🛠️ Tecnologias
-
-- .NET 10
-- ASP.NET Core Web API
-- Entity Framework Core (PostgreSQL)
-- MediatR (CQRS)
-- JWT Bearer Authentication
-- BCrypt (hash de senha)
-- SMTP (envio de e-mail via Gmail ou Resend)
-
----
-
-## ⚙️ Configuração
-
-### `appsettings.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "Padrao": "Host=localhost;Port=5432;Database=Marketplace.Auth.Db;Username=postgres;Password=sua_senha"
-  },
-  "Jwt": {
-    "Chave": "sua-chave-secreta-longa",
-    "Emissor": "Marketplace.Auth.API",
-    "Audiencia": "Marketplace.Auth.Clientes",
-    "ExpiracaoMinutos": "60",
-    "RefreshTokenExpiracaoDias": "7"
-  },
-  "Database": {
-    "RecriarAoIniciar": false
-  },
-  "Smtp": {
-    "Host": "smtp.gmail.com",
-    "Porta": "587",
-    "UsarSsl": "true",
-    "Usuario": "seu-email@gmail.com",
-    "Senha": "sua-app-password",
-    "Remetente": "seu-email@gmail.com"
-  }
-}
-```
-
-> ⚠️ Em desenvolvimento, `appsettings.Development.json` pode sobrescrever `Database:RecriarAoIniciar`.  
-> Mantenha como `false` para preservar os dados entre execuções.  
-> Use `true` apenas quando houver mudanças no modelo de dados.
-
-### SMTP com Gmail
-
-Para usar o Gmail como servidor de envio:
-1. Ative a **verificação em duas etapas** na conta Google
-2. Acesse [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-3. Gere uma **App Password** e use-a no campo `Senha`
+**Base URL:** `http://usuario.neurosky.com.br`
 
 ---
 
@@ -346,15 +292,4 @@ Não requer autenticação.
 4. POST /api/Autenticacao/refresh-token     → Renovar tokens antes de expirar
 5. POST /api/Autenticacao/esqueci-senha     → Solicitar reset por e-mail
 6. POST /api/Autenticacao/resetar-senha     → Redefinir com o token recebido
-```
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-Marketplace.Auth.API/           → Controllers, Middlewares, Program.cs
-Marketplace.Auth.Aplicacao/     → UseCases (CQRS), DTOs, Interfaces
-Marketplace.Auth.Dominio/       → Entidades, Enums, Exceções, Interfaces
-Marketplace.Auth.Repositorio/   → EF Core, Repositórios, Serviços (JWT, Email, BCrypt)
 ```

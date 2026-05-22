@@ -3,8 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# Arquivo de segredos locais (nunca commitar)
-**/appsettings.Local.json
+# Arquivo de configuração com segredos (nunca commitar)
+**/appsettings.json
 
 # User-specific files
 *.rsuser

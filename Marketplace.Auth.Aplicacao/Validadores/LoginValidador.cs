@@ -3,7 +3,7 @@ using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.Login;
 
 namespace Marketplace.Auth.Aplicacao.Validadores;
 
-public class LoginValidador : AbstractValidator<LoginCommand>
+public class LoginValidador : AbstractValidator<LoginRequest>
 {
     public LoginValidador()
     {

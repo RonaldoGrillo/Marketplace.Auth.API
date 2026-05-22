@@ -1,7 +1,7 @@
 # Marketplace.Auth.API
 
 API RESTful de autenticação e gerenciamento de usuários para o ecossistema Marketplace.  
-Desenvolvida em **.NET 10**, seguindo os princípios de **Clean Architecture** e **CQRS** com MediatR.
+Desenvolvida em **.NET 10**, seguindo os princípios de **Clean Architecture**.
 
 ---
 
@@ -10,7 +10,7 @@ Desenvolvida em **.NET 10**, seguindo os princípios de **Clean Architecture** e
 - .NET 10
 - ASP.NET Core Web API
 - Entity Framework Core (PostgreSQL)
-- MediatR (CQRS)
+- FluentValidation
 - JWT Bearer Authentication
 - BCrypt (hash de senha)
 - SMTP (envio de e-mail via Gmail ou Resend)
@@ -123,9 +123,14 @@ Não requer autenticação.
   "nome": "Ronaldo Grillo",
   "email": "usuario@email.com",
   "senha": "Senha@123",
+  "documento": "12345678909",
+  "tipoPessoa": 0,
   "funcao": 0
 }
 ```
+
+> `tipoPessoa`: `0` = Pessoa Física (CPF), `1` = Pessoa Jurídica (CNPJ)  
+> `funcao`: `0` = Comprador (padrão), `1` = Vendedor, `2` = Administrador
 
 **Resposta:** `201 Created`
 ```json
@@ -306,7 +311,8 @@ Não requer autenticação.
 
 ```
 Marketplace.Auth.API/           → Controllers, Middlewares, Program.cs
-Marketplace.Auth.Aplicacao/     → UseCases (CQRS), DTOs, Interfaces
+Marketplace.Auth.Aplicacao/     → Servicos, UseCases (requests), Validadores, DTOs, Interfaces
 Marketplace.Auth.Dominio/       → Entidades, Enums, Exceções, Interfaces
 Marketplace.Auth.Repositorio/   → EF Core, Repositórios, Serviços (JWT, Email, BCrypt)
+Marketplace.Auth.Utils/         → Helpers e extensões compartilhados
 ```

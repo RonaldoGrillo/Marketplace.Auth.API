@@ -1,10 +1,8 @@
-﻿using Marketplace.Auth.Aplicacao.DTOs;
-using Marketplace.Auth.Dominio.Enums;
-using MediatR;
+﻿using Marketplace.Auth.Dominio.Enums;
 
 namespace Marketplace.Auth.Aplicacao.UseCases.Usuarios.CriarUsuario;
 
-public record CriarUsuarioCommand(
+public record CriarUsuarioRequest(
     string Nome,
     string Email,
     string Senha,
@@ -13,5 +11,4 @@ public record CriarUsuarioCommand(
     EUsuarioFuncao Funcao = EUsuarioFuncao.Comprador,
     string? NomeFantasia = null,
     DateOnly? DataNascimento = null,
-    string? Telefone = null)
-    : IRequest<UsuarioDto>;
+    string? Telefone = null);

@@ -5,7 +5,7 @@ namespace Marketplace.Auth.Test.Infraestrutura;
 /// <summary>
 /// Substitui o EmailServico real nos testes de integração.
 /// Captura o último e-mail enviado para que os testes possam inspecionar
-/// o token de redefinição de senha gerado pelo handler EsqueciSenha.
+/// o token de redefinição de senha gerado pelo AutenticacaoServico.
 /// </summary>
 public sealed class EmailServicoFake : IEmailServico
 {
@@ -20,8 +20,7 @@ public sealed class EmailServicoFake : IEmailServico
     }
 
     /// <summary>
-    /// Extrai o token da última linha não vazia do corpo do e-mail,
-    /// que é o formato usado pelo EsqueciSenhaCommandHandler.
+    /// Extrai o token da última linha não vazia do corpo do e-mail
     /// </summary>
     public string ExtrairToken()
     {

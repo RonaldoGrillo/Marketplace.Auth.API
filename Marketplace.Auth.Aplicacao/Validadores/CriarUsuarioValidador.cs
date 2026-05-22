@@ -5,7 +5,7 @@ using Marketplace.Auth.Utils.Helpers;
 
 namespace Marketplace.Auth.Aplicacao.Validadores;
 
-public class CriarUsuarioValidador : AbstractValidator<CriarUsuarioCommand>
+public class CriarUsuarioValidador : AbstractValidator<CriarUsuarioRequest>
 {
     public CriarUsuarioValidador()
     {

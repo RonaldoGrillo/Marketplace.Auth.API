@@ -17,7 +17,7 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     // CPF válido para testes: gerado com dígitos verificadores corretos
     private static string NovoCpfTeste() => GeradorCpfTeste.Gerar();
 
-    private static CriarUsuarioCommand NovoUsuarioAdministrador() => new(
+    private static CriarUsuarioRequest NovoUsuarioAdministrador() => new(
         Nome: $"Usuário Teste {Guid.NewGuid():N}",
         Email: $"teste_{Guid.NewGuid():N}@marketplace.com",
         Senha: "Senha@123",
@@ -30,13 +30,13 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     /// Utilitário de arrange para evitar repetição nos testes.
     /// </summary>
     private async Task<(UsuarioDto Usuario, LoginResponse Login)> CriarEAutenticarAsync(
-        HttpClient cliente, CriarUsuarioCommand? command = null)
+        HttpClient cliente, CriarUsuarioRequest? request = null)
     {
-        command ??= NovoUsuarioAdministrador();
-        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", command);
+        request ??= NovoUsuarioAdministrador();
+        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", request);
         var usuario = await respostaCriacao.Content.ReadFromJsonAsync<UsuarioDto>();
         var respostaLogin = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, command.Senha });
+            new { request.Email, request.Senha });
         var login = await respostaLogin.Content.ReadFromJsonAsync<LoginResponse>();
         return (usuario!, login!);
     }
@@ -47,25 +47,25 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoCriarUsuario_DeveRetornar201ComDadosDoUsuario()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
+        var request = NovoUsuarioAdministrador();
 
-        var resposta = await cliente.PostAsJsonAsync("/api/usuario", command);
+        var resposta = await cliente.PostAsJsonAsync("/api/usuario", request);
 
         Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
         var usuario = await resposta.Content.ReadFromJsonAsync<UsuarioDto>();
         Assert.NotNull(usuario);
-        Assert.Equal(command.Nome, usuario.Nome);
-        Assert.Equal(command.Email.ToLower(), usuario.Email.ToLower());
+        Assert.Equal(request.Nome, usuario.Nome);
+        Assert.Equal(request.Email.ToLower(), usuario.Email.ToLower());
     }
 
     [Fact]
     public async Task QuandoCriarUsuarioComEmailDuplicado_DeveRetornar400()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
 
-        var resposta = await cliente.PostAsJsonAsync("/api/usuario", command);
+        var resposta = await cliente.PostAsJsonAsync("/api/usuario", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
     }
@@ -87,11 +87,11 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoFazerLogin_DeveRetornarAccessTokenERefreshToken()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
 
         var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, command.Senha });
+            new { request.Email, request.Senha });
 
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
         var login = await resposta.Content.ReadFromJsonAsync<LoginResponse>();
@@ -104,11 +104,11 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoFazerLoginComSenhaErrada_DeveRetornar401()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
 
         var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, Senha = "SenhaErrada@999" });
+            new { request.Email, Senha = "SenhaErrada@999" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, resposta.StatusCode);
     }
@@ -117,10 +117,10 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoFazerRefreshToken_DeveRetornarNovosTokens()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
         var respostaLogin = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, command.Senha });
+            new { request.Email, request.Senha });
         var login = await respostaLogin.Content.ReadFromJsonAsync<LoginResponse>();
 
         var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/refresh-token",
@@ -150,11 +150,11 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoEsqueciSenha_DeveRetornar204()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
 
         var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/esqueci-senha",
-            new { command.Email });
+            new { request.Email });
 
         Assert.Equal(HttpStatusCode.NoContent, resposta.StatusCode);
     }
@@ -163,12 +163,12 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoResetarSenhaComTokenInvalido_DeveRetornar400()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
-        await cliente.PostAsJsonAsync("/api/autenticacao/esqueci-senha", new { command.Email });
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
+        await cliente.PostAsJsonAsync("/api/autenticacao/esqueci-senha", new { request.Email });
 
         var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/resetar-senha",
-            new { command.Email, Token = "token-errado", NovaSenha = "NovaSenha@456" });
+            new { request.Email, Token = "token-errado", NovaSenha = "NovaSenha@456" });
 
         Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
     }
@@ -177,18 +177,18 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoResetarSenhaComTokenCorreto_DeveBloqueiarSenhaAntigaEPermitirNovaSenha()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", command);
-        await cliente.PostAsJsonAsync("/api/autenticacao/esqueci-senha", new { command.Email });
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
+        await cliente.PostAsJsonAsync("/api/autenticacao/esqueci-senha", new { request.Email });
         var token = factory.EmailFake.ExtrairToken();
         const string novaSenha = "NovaSenha@456";
 
         var respostaReset = await cliente.PostAsJsonAsync("/api/autenticacao/resetar-senha",
-            new { command.Email, Token = token, NovaSenha = novaSenha });
+            new { request.Email, Token = token, NovaSenha = novaSenha });
         var respostaLoginSenhaAntiga = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, command.Senha });
+            new { request.Email, request.Senha });
         var respostaLoginNovaSenha = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, Senha = novaSenha });
+            new { request.Email, Senha = novaSenha });
 
         Assert.Equal(HttpStatusCode.NoContent, respostaReset.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, respostaLoginSenhaAntiga.StatusCode);
@@ -201,8 +201,8 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoObterUsuarioSemAutenticacao_DeveRetornar401()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", request);
         var usuario = await respostaCriacao.Content.ReadFromJsonAsync<UsuarioDto>();
 
         var resposta = await cliente.GetAsync($"/api/usuario/{usuario!.Id}");
@@ -216,8 +216,8 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoAtualizarUsuario_DeveRetornarDadosAtualizados()
     {
         var cliente = NovoCliente();
-        var command = NovoUsuarioAdministrador();
-        var (usuario, login) = await CriarEAutenticarAsync(cliente, command);
+        var request = NovoUsuarioAdministrador();
+        var (usuario, login) = await CriarEAutenticarAsync(cliente, request);
 
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
         var novoEmail = $"atualizado_{Guid.NewGuid():N}@marketplace.com";
@@ -234,14 +234,14 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     public async Task QuandoAtualizarUsuarioComEmailJaEmUso_DeveRetornar400()
     {
         var cliente = NovoCliente();
-        var outroCommand = NovoUsuarioAdministrador();
-        await cliente.PostAsJsonAsync("/api/usuario", outroCommand);
-        var command = NovoUsuarioAdministrador();
-        var (usuario, login) = await CriarEAutenticarAsync(cliente, command);
+        var outraRequest = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", outraRequest);
+        var request = NovoUsuarioAdministrador();
+        var (usuario, login) = await CriarEAutenticarAsync(cliente, request);
 
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
         var resposta = await cliente.PutAsJsonAsync($"/api/usuario/{usuario.Id}",
-            new { Nome = "Qualquer", Email = outroCommand.Email });
+            new { Nome = "Qualquer", Email = outraRequest.Email });
 
         Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
     }
@@ -278,7 +278,7 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
         var clienteAdmin = NovoCliente();
         var (usuarioAlvo, _) = await CriarEAutenticarAsync(clienteAdmin);
 
-        var compradorCommand = new CriarUsuarioCommand(
+        var compradorRequest = new CriarUsuarioRequest(
             Nome: $"Comprador {Guid.NewGuid():N}",
             Email: $"comprador_{Guid.NewGuid():N}@marketplace.com",
             Senha: "Senha@123",
@@ -286,7 +286,7 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
             TipoPessoa: ETipoPessoa.PessoaFisica,
             Funcao: EUsuarioFuncao.Comprador);
         var clienteComprador = NovoCliente();
-        var (_, loginComprador) = await CriarEAutenticarAsync(clienteComprador, compradorCommand);
+        var (_, loginComprador) = await CriarEAutenticarAsync(clienteComprador, compradorRequest);
 
         clienteComprador.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", loginComprador.AccessToken);
@@ -316,18 +316,18 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
         var cliente = NovoCliente();
 
         // 1. Criar
-        var command = NovoUsuarioAdministrador();
-        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", command);
+        var request = NovoUsuarioAdministrador();
+        var respostaCriacao = await cliente.PostAsJsonAsync("/api/usuario", request);
         Assert.Equal(HttpStatusCode.Created, respostaCriacao.StatusCode);
         var usuario = await respostaCriacao.Content.ReadFromJsonAsync<UsuarioDto>();
         Assert.NotNull(usuario);
-        Assert.Equal(command.Nome, usuario.Nome);
-        Assert.Equal(command.Email.ToLower(), usuario.Email);
+        Assert.Equal(request.Nome, usuario.Nome);
+        Assert.Equal(request.Email.ToLower(), usuario.Email);
         Assert.Equal(EUsuarioFuncao.Administrador, usuario.Funcao);
 
         // 2. Login
         var respostaLogin = await cliente.PostAsJsonAsync("/api/autenticacao/login",
-            new { command.Email, command.Senha });
+            new { request.Email, request.Senha });
         Assert.Equal(HttpStatusCode.OK, respostaLogin.StatusCode);
         var login = await respostaLogin.Content.ReadFromJsonAsync<LoginResponse>();
         Assert.NotNull(login);

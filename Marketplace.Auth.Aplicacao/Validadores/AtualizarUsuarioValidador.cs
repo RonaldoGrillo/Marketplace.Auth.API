@@ -4,7 +4,7 @@ using Marketplace.Auth.Utils.Helpers;
 
 namespace Marketplace.Auth.Aplicacao.Validadores;
 
-public class AtualizarUsuarioValidador : AbstractValidator<AtualizarUsuarioCommand>
+public class AtualizarUsuarioValidador : AbstractValidator<AtualizarUsuarioRequest>
 {
     public AtualizarUsuarioValidador()
     {

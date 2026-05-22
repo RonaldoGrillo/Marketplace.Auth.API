@@ -1,39 +1,39 @@
 using Marketplace.Auth.Aplicacao.DTOs;
+using Marketplace.Auth.Aplicacao.Servicos;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.Login;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Marketplace.Auth.API.Controllers;
 
 [Route("api/[controller]")]
-public class AutenticacaoController(IMediator mediator) : ControladorBase
+public class AutenticacaoController(AutenticacaoServico servico) : ControladorBase
 {
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginCommand command, CancellationToken ct)
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var resultado = await mediator.Send(command, ct);
+        var resultado = await servico.LoginAsync(request, ct);
         return Ok(resultado);
     }
 
     [HttpPost("refresh-token")]
-    public async Task<ActionResult<TokenDto>> RefreshToken([FromBody] RefreshTokenCommand command, CancellationToken ct)
+    public async Task<ActionResult<TokenDto>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
     {
-        var resultado = await mediator.Send(command, ct);
+        var resultado = await servico.RefreshTokenAsync(request, ct);
         return Ok(resultado);
     }
 
     [HttpPost("esqueci-senha")]
-    public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaCommand command, CancellationToken ct)
+    public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaRequest request, CancellationToken ct)
     {
-        await mediator.Send(command, ct);
+        await servico.EsqueciSenhaAsync(request, ct);
         return NoContent();
     }
 
     [HttpPost("resetar-senha")]
-    public async Task<IActionResult> ResetarSenha([FromBody] ResetarSenhaCommand command, CancellationToken ct)
+    public async Task<IActionResult> ResetarSenha([FromBody] ResetarSenhaRequest request, CancellationToken ct)
     {
-        await mediator.Send(command, ct);
+        await servico.ResetarSenhaAsync(request, ct);
         return NoContent();
     }
 }

@@ -8,5 +8,10 @@ public record CriarUsuarioCommand(
     string Nome,
     string Email,
     string Senha,
-    EUsuarioFuncao Funcao = EUsuarioFuncao.Comprador)
+    string Documento,
+    ETipoPessoa TipoPessoa,
+    EUsuarioFuncao Funcao = EUsuarioFuncao.Comprador,
+    string? NomeFantasia = null,
+    DateOnly? DataNascimento = null,
+    string? Telefone = null)
     : IRequest<UsuarioDto>;

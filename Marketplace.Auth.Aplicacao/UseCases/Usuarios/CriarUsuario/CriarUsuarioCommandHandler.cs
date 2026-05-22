@@ -16,8 +16,20 @@ public sealed class CriarUsuarioCommandHandler(IUsuarioRepositorio repositorio, 
         if (await repositorio.ExisteEmailAsync(request.Email, cancellationToken))
             throw new DominioException($"Já existe um usuário com o e-mail '{request.Email}'.");
 
+        if (await repositorio.ExisteDocumentoAsync(request.Documento, cancellationToken))
+            throw new DominioException("Já existe um usuário com este documento (CPF/CNPJ).");
+
         var senhaHash = senhaCriptografia.Criptografar(request.Senha);
-        var usuario = Usuario.Criar(request.Nome, request.Email, senhaHash, request.Funcao);
+        var usuario = Usuario.Criar(
+            request.Nome,
+            request.Email,
+            senhaHash,
+            request.Documento,
+            request.TipoPessoa,
+            request.Funcao,
+            request.NomeFantasia,
+            request.DataNascimento,
+            request.Telefone);
 
         await repositorio.AdicionarAsync(usuario, cancellationToken);
 

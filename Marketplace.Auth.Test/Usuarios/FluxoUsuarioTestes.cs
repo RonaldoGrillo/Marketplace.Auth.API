@@ -14,10 +14,15 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
     // Cria um cliente novo por teste para evitar estado compartilhado nos headers
     private HttpClient NovoCliente() => factory.CreateClient();
 
+    // CPF válido para testes: gerado com dígitos verificadores corretos
+    private static string NovoCpfTeste() => GeradorCpfTeste.Gerar();
+
     private static CriarUsuarioCommand NovoUsuarioAdministrador() => new(
         Nome: $"Usuário Teste {Guid.NewGuid():N}",
         Email: $"teste_{Guid.NewGuid():N}@marketplace.com",
         Senha: "Senha@123",
+        Documento: NovoCpfTeste(),
+        TipoPessoa: ETipoPessoa.PessoaFisica,
         Funcao: EUsuarioFuncao.Administrador);
 
     /// <summary>
@@ -277,6 +282,8 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
             Nome: $"Comprador {Guid.NewGuid():N}",
             Email: $"comprador_{Guid.NewGuid():N}@marketplace.com",
             Senha: "Senha@123",
+            Documento: NovoCpfTeste(),
+            TipoPessoa: ETipoPessoa.PessoaFisica,
             Funcao: EUsuarioFuncao.Comprador);
         var clienteComprador = NovoCliente();
         var (_, loginComprador) = await CriarEAutenticarAsync(clienteComprador, compradorCommand);

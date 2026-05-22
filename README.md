@@ -64,14 +64,26 @@ Para usar o Gmail como servidor de envio:
 
 ### Usuário
 
-| Campo      | Tipo             | Descrição                                       |
-|------------|------------------|-------------------------------------------------|
-| `id`       | `Guid`           | Identificador único                             |
-| `nome`     | `string`         | Nome completo                                   |
-| `email`    | `string`         | E-mail (armazenado em lowercase)                |
-| `funcao`   | `EUsuarioFuncao` | Papel do usuário no sistema (ver tabela abaixo) |
-| `status`   | `EUsuarioStatus` | Situação da conta (ver tabela abaixo)           |
-| `criadoEm` | `DateTime`       | Data de criação (UTC)                           |
+| Campo           | Tipo             | Obrigatório | Descrição                                                                 |
+|-----------------|------------------|-------------|---------------------------------------------------------------------------|
+| `id`            | `Guid`           | Sim         | Identificador único                                                       |
+| `nome`          | `string`         | Sim         | Nome completo (Pessoa Física) ou Razão Social (Pessoa Jurídica), máx. 200 |
+| `nomeFantasia`  | `string?`        | Não         | Nome fantasia — recomendado para Pessoa Jurídica, máx. 200                |
+| `email`         | `string`         | Sim         | E-mail único (armazenado em lowercase)                                    |
+| `documento`     | `string`         | Sim         | CPF (PF, 11 dígitos) ou CNPJ (PJ, 14 dígitos) — único, sem formatação    |
+| `dataNascimento`| `DateOnly?`      | Não         | Data de nascimento (PF) ou data de fundação (PJ)                          |
+| `telefone`      | `string?`        | Não         | Telefone com DDD — apenas dígitos, mín. 10 dígitos                        |
+| `tipoPessoa`    | `ETipoPessoa`    | Sim         | Tipo de pessoa (ver tabela abaixo)                                        |
+| `funcao`        | `EUsuarioFuncao` | Sim         | Papel no sistema (ver tabela abaixo)                                      |
+| `status`        | `EUsuarioStatus` | Sim         | Situação da conta (ver tabela abaixo)                                     |
+| `criadoEm`      | `DateTime`       | Sim         | Data de criação (UTC)                                                     |
+
+#### `tipoPessoa` — ETipoPessoa
+
+| Valor | Nome             | Descrição                              |
+|-------|------------------|----------------------------------------|
+| `0`   | `PessoaFisica`   | Cadastro com CPF e nome completo       |
+| `1`   | `PessoaJuridica` | Cadastro com CNPJ e razão social       |
 
 #### `funcao` — EUsuarioFuncao
 
@@ -80,6 +92,8 @@ Para usar o Gmail como servidor de envio:
 | `0`   | `Comprador`     | Usuário padrão, pode realizar compras        |
 | `1`   | `Vendedor`      | Pode cadastrar e gerenciar produtos          |
 | `2`   | `Administrador` | Acesso total, incluindo exclusão de usuários |
+
+> `tipoPessoa` e `funcao` são independentes: um Vendedor pode ser PF ou PJ; um Comprador também.
 
 #### `status` — EUsuarioStatus
 
@@ -117,22 +131,50 @@ Use o endpoint `refresh-token` para renová-lo sem precisar fazer login novament
 
 Não requer autenticação.
 
-**Body:**
+**Body — Pessoa Física:**
 ```json
 {
   "nome": "Ronaldo Grillo",
   "email": "usuario@email.com",
   "senha": "Senha@123",
-  "funcao": 0
+  "documento": "52998224725",
+  "tipoPessoa": 0,
+  "funcao": 0,
+  "dataNascimento": "1995-06-15",
+  "telefone": "11987654321"
 }
 ```
+
+**Body — Pessoa Jurídica:**
+```json
+{
+  "nome": "Acme Comércio Ltda",
+  "nomeFantasia": "Acme Shop",
+  "email": "contato@acme.com",
+  "senha": "Senha@123",
+  "documento": "11222333000181",
+  "tipoPessoa": 1,
+  "funcao": 1,
+  "dataNascimento": "2010-03-20",
+  "telefone": "1133334444"
+}
+```
+
+> - `documento`: apenas dígitos — CPF (11) para `tipoPessoa: 0`, CNPJ (14) para `tipoPessoa: 1`.  
+> - `nomeFantasia`, `dataNascimento` e `telefone` são opcionais.  
+> - `funcao` padrão é `0` (Comprador) quando omitido.
 
 **Resposta:** `201 Created`
 ```json
 {
   "id": "a7ebcf6b-dc0c-4d43-ae77-eff70a77fc64",
   "nome": "Ronaldo Grillo",
+  "nomeFantasia": null,
   "email": "usuario@email.com",
+  "documento": "52998224725",
+  "dataNascimento": "1995-06-15",
+  "telefone": "11987654321",
+  "tipoPessoa": 0,
   "funcao": 0,
   "status": 0,
   "criadoEm": "2026-04-23T14:54:38Z"
@@ -157,9 +199,15 @@ Não requer autenticação.
 ```json
 {
   "nome": "Novo Nome",
-  "email": "novo@email.com"
+  "email": "novo@email.com",
+  "nomeFantasia": null,
+  "dataNascimento": "1995-06-15",
+  "telefone": "11999998888"
 }
 ```
+
+> `nomeFantasia`, `dataNascimento` e `telefone` são opcionais.  
+> `documento` e `tipoPessoa` não podem ser alterados após o cadastro.
 
 **Resposta:** `200 OK` — retorna `UsuarioDto` atualizado
 

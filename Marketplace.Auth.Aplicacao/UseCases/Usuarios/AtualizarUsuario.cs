@@ -9,7 +9,10 @@ namespace Marketplace.Auth.Aplicacao.UseCases.Usuarios;
 public record AtualizarUsuarioCommand(
     Guid Id,
     string Nome,
-    string Email)
+    string Email,
+    string? NomeFantasia,
+    DateOnly? DataNascimento,
+    string? Telefone)
     : IRequest<UsuarioDto>;
 
 public sealed class AtualizarUsuarioCommandHandler(IUsuarioRepositorio repositorio)
@@ -24,7 +27,7 @@ public sealed class AtualizarUsuarioCommandHandler(IUsuarioRepositorio repositor
             await repositorio.ExisteEmailAsync(request.Email, cancellationToken))
             throw new DominioException($"Já existe um usuário com o e-mail '{request.Email}'.");
 
-        usuario.Atualizar(request.Nome, request.Email);
+        usuario.Atualizar(request.Nome, request.Email, request.NomeFantasia, request.DataNascimento, request.Telefone);
         await repositorio.AtualizarAsync(usuario, cancellationToken);
 
         return usuario.Adapt<UsuarioDto>();

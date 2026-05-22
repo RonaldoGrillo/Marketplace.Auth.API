@@ -1,6 +1,7 @@
 ﻿using Marketplace.Auth.Dominio.Entidades;
 using Marketplace.Auth.Dominio.Interfaces;
 using Marketplace.Auth.Repositorio.Persistencia.Contexto;
+using Marketplace.Auth.Utils.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Marketplace.Auth.Repositorio.Persistencia.Repositorios;
@@ -19,6 +20,9 @@ public class UsuarioRepositorio(AuthDbContexto contexto) : IUsuarioRepositorio
 
     public async Task<bool> ExisteEmailAsync(string email, CancellationToken ct = default) =>
         await contexto.Usuarios.AnyAsync(u => u.Email == email.ToLowerInvariant(), ct);
+
+    public async Task<bool> ExisteDocumentoAsync(string documento, CancellationToken ct = default) =>
+        await contexto.Usuarios.AnyAsync(u => u.Documento == DocumentoHelper.ApenasDigitos(documento), ct);
 
     public async Task AdicionarAsync(Usuario usuario, CancellationToken ct = default)
     {

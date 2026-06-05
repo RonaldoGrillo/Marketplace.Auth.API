@@ -95,7 +95,7 @@ public class SincronizadorEsquema(AuthDbContexto contexto, IConfiguration config
     private async Task AdicionarColunaAsync(DbConnection conn, string tabela, IEntityType entidade, IProperty prop, string nomeCol, CancellationToken ct)
     {
         var tipo = ObterTipoColuna(entidade, prop);
-        var notNull = prop.IsNullable ? "" : $" NOT NULL DEFAULT {ObterValorPadrao(prop)}";
+        var notNull = prop.IsNullable ? "" : $" NOT NULL DEFAULT {ObterValorPadrao(prop, tipo)}"; // ← pass tipo
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = $"""ALTER TABLE "{tabela}" ADD COLUMN IF NOT EXISTS "{nomeCol}" {tipo}{notNull};""";
@@ -163,7 +163,7 @@ public class SincronizadorEsquema(AuthDbContexto contexto, IConfiguration config
         };
     }
 
-    private static string ObterValorPadrao(IProperty prop)
+    private static string ObterValorPadrao(IProperty prop, string tipo)
     {
         var clrType = Nullable.GetUnderlyingType(prop.ClrType) ?? prop.ClrType;
 
@@ -173,8 +173,15 @@ public class SincronizadorEsquema(AuthDbContexto contexto, IConfiguration config
             _ when clrType == typeof(string) => "''",
             _ when clrType == typeof(bool) => "false",
             _ when clrType == typeof(DateTime) => "NOW()",
-            _ when clrType.IsEnum => "''",
+            _ when clrType.IsEnum => IsNumericSqlType(tipo) ? "0" : "''",
             _ => "0"
         };
+    }
+
+    private static bool IsNumericSqlType(string tipo)
+    {
+        var t = tipo.ToLowerInvariant();
+        return t is "smallint" or "integer" or "int" or "bigint"
+                  or "numeric" or "real" or "double precision";
     }
 }

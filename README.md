@@ -83,11 +83,11 @@ Não requer autenticação.
   "nome": "Ronaldo Grillo",
   "email": "usuario@email.com",
   "senha": "Senha@123",
-  "documento": "52998224725",
+  "documento": "01234567890",
   "tipoPessoa": 0,
   "funcao": 0,
-  "dataNascimento": "1995-06-15",
-  "telefone": "11987654321"
+  "dataNascimento": "2004-01-08",
+  "telefone": "54991283598"
 }
 ```
 
@@ -98,11 +98,11 @@ Não requer autenticação.
   "nomeFantasia": "Acme Shop",
   "email": "contato@acme.com",
   "senha": "Senha@123",
-  "documento": "11222333000181",
+  "documento": "01234567000195",
   "tipoPessoa": 1,
   "funcao": 1,
   "dataNascimento": "2010-03-20",
-  "telefone": "1133334444"
+  "telefone": "5433330000"
 }
 ```
 
@@ -117,9 +117,9 @@ Não requer autenticação.
   "nome": "Ronaldo Grillo",
   "nomeFantasia": null,
   "email": "usuario@email.com",
-  "documento": "52998224725",
-  "dataNascimento": "1995-06-15",
-  "telefone": "11987654321",
+  "documento": "01234567890",
+  "dataNascimento": "2004-01-08",
+  "telefone": "54991283598",
   "tipoPessoa": 0,
   "funcao": 0,
   "status": 0,
@@ -148,7 +148,7 @@ Não requer autenticação.
   "email": "novo@email.com",
   "nomeFantasia": null,
   "dataNascimento": "1995-06-15",
-  "telefone": "11999998888"
+  "telefone": "54999998888"
 }
 ```
 

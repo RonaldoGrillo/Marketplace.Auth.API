@@ -1,7 +1,7 @@
-using Marketplace.Auth.Aplicacao.DTOs;
 using Marketplace.Auth.Aplicacao.Servicos;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.Login;
+using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.RefreshToken;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Marketplace.Auth.API.Controllers;
@@ -17,7 +17,7 @@ public class AutenticacaoController(AutenticacaoServico servico) : ControladorBa
     }
 
     [HttpPost("refresh-token")]
-    public async Task<ActionResult<TokenDto>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    public async Task<ActionResult<RefreshTokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
     {
         var resultado = await servico.RefreshTokenAsync(request, ct);
         return Ok(resultado);
@@ -27,6 +27,13 @@ public class AutenticacaoController(AutenticacaoServico servico) : ControladorBa
     public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaRequest request, CancellationToken ct)
     {
         await servico.EsqueciSenhaAsync(request, ct);
+        return NoContent();
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    {
+        await servico.LogoutAsync(request, ct);
         return NoContent();
     }
 

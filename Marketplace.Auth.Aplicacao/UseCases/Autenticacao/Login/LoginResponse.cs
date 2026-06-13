@@ -2,8 +2,9 @@
 
 public record LoginResponse(
     string AccessToken,
+    DateTime AccessTokenExpiresIn,
     string RefreshToken,
-    DateTime ExpiresIn,
+    DateTime RefreshTokenExpiresIn,
     Guid UsuarioId,
     string Nome,
     string Email);

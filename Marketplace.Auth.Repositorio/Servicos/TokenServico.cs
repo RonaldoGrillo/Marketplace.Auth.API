@@ -36,6 +36,9 @@ public class TokenServico(IConfiguration configuration) : ITokenServico
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public DateTime ObterExpiracaoAccessToken() =>
+        DateTime.UtcNow.AddMinutes(double.Parse(configuration["Jwt:ExpiracaoMinutos"]!));
+
     public RefreshToken GerarRefreshToken(Guid usuarioId)
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));

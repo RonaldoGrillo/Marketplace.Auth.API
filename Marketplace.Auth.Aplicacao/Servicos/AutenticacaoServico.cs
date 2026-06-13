@@ -1,8 +1,8 @@
 using FluentValidation;
-using Marketplace.Auth.Aplicacao.DTOs;
 using Marketplace.Auth.Aplicacao.Interfaces;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.Login;
+using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.RefreshToken;
 using Marketplace.Auth.Dominio.Excecoes;
 using Marketplace.Auth.Dominio.Interfaces;
 
@@ -26,9 +26,8 @@ public class AutenticacaoServico(
         if (!senhaCriptografia.Verificar(request.Senha, usuario.SenhaHash))
             throw new CredenciaisInvalidasException();
 
-        await repositorio.RevogarTodosRefreshTokensAsync(usuario.Id, ct);
-
         var accessToken = tokenServico.GerarAccessToken(usuario);
+        var accessTokenExpiresIn = tokenServico.ObterExpiracaoAccessToken();
         var refreshToken = tokenServico.GerarRefreshToken(usuario.Id);
 
         await repositorio.AdicionarRefreshTokenAsync(refreshToken, ct);
@@ -36,6 +35,7 @@ public class AutenticacaoServico(
 
         return new LoginResponse(
             accessToken,
+            accessTokenExpiresIn,
             refreshToken.Token,
             refreshToken.ExpiresIn,
             usuario.Id,
@@ -43,8 +43,8 @@ public class AutenticacaoServico(
             usuario.Email);
     }
 
-    /// <summary>Gera um novo par de tokens a partir de um refresh token válido.</summary>
-    public async Task<TokenDto> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken ct = default)
+    /// <summary>Gera um novo access token a partir de um refresh token válido. O refresh token não é rotacionado.</summary>
+    public async Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken ct = default)
     {
         var tokenExistente = await repositorio.ObterRefreshTokenAsync(request.Token, ct)
             ?? throw new DominioException("Refresh token inválido ou expirado.");
@@ -55,15 +55,22 @@ public class AutenticacaoServico(
         var usuario = await repositorio.ObterPorIdAsync(tokenExistente.UsuarioId, ct)
             ?? throw new UsuarioNaoEncontradoException(tokenExistente.UsuarioId);
 
-        await repositorio.RevogarRefreshTokenAsync(tokenExistente, ct);
-
         var novoAccessToken = tokenServico.GerarAccessToken(usuario);
-        var novoRefreshToken = tokenServico.GerarRefreshToken(usuario.Id);
+        var accessTokenExpiresIn = tokenServico.ObterExpiracaoAccessToken();
 
-        await repositorio.AdicionarRefreshTokenAsync(novoRefreshToken, ct);
-        await repositorio.DeletarRefreshTokensRevogadosAsync(usuario.Id, ct);
+        return new RefreshTokenResponse(novoAccessToken, accessTokenExpiresIn);
+    }
 
-        return new TokenDto(novoAccessToken, novoRefreshToken.Token, novoRefreshToken.ExpiresIn);
+    /// <summary>Invalida o refresh token da sessão atual. Retorna silenciosamente se o token não existir ou já estiver revogado.</summary>
+    public async Task LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default)
+    {
+        var token = await repositorio.ObterRefreshTokenAsync(request.Token, ct);
+
+        if (token is null || !token.Valido())
+            return;
+
+        await repositorio.RevogarRefreshTokenAsync(token, ct);
+        await repositorio.DeletarRefreshTokensRevogadosAsync(token.UsuarioId, ct);
     }
 
     /// <summary>Envia e-mail com token de redefinição de senha.</summary>

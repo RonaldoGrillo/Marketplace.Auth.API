@@ -1,5 +1,6 @@
 using Marketplace.Auth.Aplicacao.DTOs;
 using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.Login;
+using Marketplace.Auth.Aplicacao.UseCases.Autenticacao.RefreshToken;
 using Marketplace.Auth.Aplicacao.UseCases.Usuarios.CriarUsuario;
 using Marketplace.Auth.Dominio.Enums;
 using Marketplace.Auth.Test.Infraestrutura;
@@ -127,10 +128,9 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
             new { Token = login!.RefreshToken });
 
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
-        var token = await resposta.Content.ReadFromJsonAsync<TokenDto>();
+        var token = await resposta.Content.ReadFromJsonAsync<RefreshTokenResponse>();
         Assert.NotNull(token);
         Assert.False(string.IsNullOrWhiteSpace(token.AccessToken));
-        Assert.False(string.IsNullOrWhiteSpace(token.RefreshToken));
     }
 
     [Fact]
@@ -142,6 +142,65 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
             new { Token = "token-invalido-qualquer" });
 
         Assert.NotEqual(HttpStatusCode.OK, resposta.StatusCode);
+    }
+
+    [Fact]
+    public async Task QuandoFazerLogout_DeveInvalidarRefreshToken()
+    {
+        var cliente = NovoCliente();
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
+        var respostaLogin = await cliente.PostAsJsonAsync("/api/autenticacao/login",
+            new { request.Email, request.Senha });
+        var login = await respostaLogin.Content.ReadFromJsonAsync<LoginResponse>();
+
+        var respostaLogout = await cliente.PostAsJsonAsync("/api/autenticacao/logout",
+            new { Token = login!.RefreshToken });
+        Assert.Equal(HttpStatusCode.NoContent, respostaLogout.StatusCode);
+
+        var respostaRefresh = await cliente.PostAsJsonAsync("/api/autenticacao/refresh-token",
+            new { Token = login.RefreshToken });
+        Assert.NotEqual(HttpStatusCode.OK, respostaRefresh.StatusCode);
+    }
+
+    [Fact]
+    public async Task QuandoFazerLogoutComTokenInvalido_DeveRetornar204()
+    {
+        var cliente = NovoCliente();
+
+        var resposta = await cliente.PostAsJsonAsync("/api/autenticacao/logout",
+            new { Token = "token-que-nao-existe" });
+
+        Assert.Equal(HttpStatusCode.NoContent, resposta.StatusCode);
+    }
+
+    [Fact]
+    public async Task QuandoDoisLogins_DevemManterSessoesIndependentes()
+    {
+        var cliente = NovoCliente();
+        var request = NovoUsuarioAdministrador();
+        await cliente.PostAsJsonAsync("/api/usuario", request);
+
+        var respostaLogin1 = await cliente.PostAsJsonAsync("/api/autenticacao/login",
+            new { request.Email, request.Senha });
+        var login1 = await respostaLogin1.Content.ReadFromJsonAsync<LoginResponse>();
+
+        var respostaLogin2 = await cliente.PostAsJsonAsync("/api/autenticacao/login",
+            new { request.Email, request.Senha });
+        var login2 = await respostaLogin2.Content.ReadFromJsonAsync<LoginResponse>();
+
+        Assert.NotEqual(login1!.RefreshToken, login2!.RefreshToken);
+
+        // Sessão 1 ainda deve funcionar após sessão 2 ser criada
+        var respostaRefresh1 = await cliente.PostAsJsonAsync("/api/autenticacao/refresh-token",
+            new { Token = login1.RefreshToken });
+        Assert.Equal(HttpStatusCode.OK, respostaRefresh1.StatusCode);
+
+        // Logout da sessão 2 não afeta a sessão 1
+        await cliente.PostAsJsonAsync("/api/autenticacao/logout", new { Token = login2.RefreshToken });
+        var respostaRefresh1AposLogout2 = await cliente.PostAsJsonAsync("/api/autenticacao/refresh-token",
+            new { Token = login1.RefreshToken });
+        Assert.Equal(HttpStatusCode.OK, respostaRefresh1AposLogout2.StatusCode);
     }
 
     // ── Redefinição de senha ─────────────────────────────────────────────────
@@ -343,7 +402,7 @@ public class FluxoUsuarioTestes(MarketplaceAuthFactory factory) : IClassFixture<
         var respostaRefresh = await cliente.PostAsJsonAsync("/api/autenticacao/refresh-token",
             new { Token = login.RefreshToken });
         Assert.Equal(HttpStatusCode.OK, respostaRefresh.StatusCode);
-        var novoToken = await respostaRefresh.Content.ReadFromJsonAsync<TokenDto>();
+        var novoToken = await respostaRefresh.Content.ReadFromJsonAsync<RefreshTokenResponse>();
         Assert.NotNull(novoToken);
 
         // 5. Atualizar com token renovado

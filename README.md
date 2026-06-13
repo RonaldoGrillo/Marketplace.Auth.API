@@ -1,252 +1,214 @@
-# Marketplace.Auth.API
+﻿# Marketplace.Auth.API
 
-API RESTful de autenticação e gerenciamento de usuários para o ecossistema Marketplace.
-
-**Base URL:** `http://usuario.neurosky.com.br`
+API RESTful de autenticacao e gerenciamento de usuarios para o ecossistema Marketplace.
 
 ---
 
-## 🗃️ Entidades
+## Sumario
 
-### Usuário
-
-| Campo           | Tipo             | Obrigatório | Descrição                                                                 |
-|-----------------|------------------|-------------|---------------------------------------------------------------------------|
-| `id`            | `Guid`           | Sim         | Identificador único                                                       |
-| `nome`          | `string`         | Sim         | Nome completo (Pessoa Física) ou Razão Social (Pessoa Jurídica), máx. 200 |
-| `nomeFantasia`  | `string?`        | Não         | Nome fantasia — recomendado para Pessoa Jurídica, máx. 200                |
-| `email`         | `string`         | Sim         | E-mail único (armazenado em lowercase)                                    |
-| `documento`     | `string`         | Sim         | CPF (PF, 11 dígitos) ou CNPJ (PJ, 14 dígitos) — único, sem formatação    |
-| `dataNascimento`| `DateOnly?`      | Não         | Data de nascimento (PF) ou data de fundação (PJ)                          |
-| `telefone`      | `string?`        | Não         | Telefone com DDD — apenas dígitos, mín. 10 dígitos                        |
-| `tipoPessoa`    | `ETipoPessoa`    | Sim         | Tipo de pessoa (ver tabela abaixo)                                        |
-| `funcao`        | `EUsuarioFuncao` | Sim         | Papel no sistema (ver tabela abaixo)                                      |
-| `status`        | `EUsuarioStatus` | Sim         | Situação da conta (ver tabela abaixo)                                     |
-| `criadoEm`      | `DateTime`       | Sim         | Data de criação (UTC)                                                     |
-
-#### `tipoPessoa` — ETipoPessoa
-
-| Valor | Nome             | Descrição                              |
-|-------|------------------|----------------------------------------|
-| `0`   | `PessoaFisica`   | Cadastro com CPF e nome completo       |
-| `1`   | `PessoaJuridica` | Cadastro com CNPJ e razão social       |
-
-#### `funcao` — EUsuarioFuncao
-
-| Valor | Nome            | Descrição                                    |
-|-------|-----------------|----------------------------------------------|
-| `0`   | `Comprador`     | Usuário padrão, pode realizar compras        |
-| `1`   | `Vendedor`      | Pode cadastrar e gerenciar produtos          |
-| `2`   | `Administrador` | Acesso total, incluindo exclusão de usuários |
-
-> `tipoPessoa` e `funcao` são independentes: um Vendedor pode ser PF ou PJ; um Comprador também.
-
-#### `status` — EUsuarioStatus
-
-| Valor | Nome       | Descrição                          |
-|-------|------------|------------------------------------|
-| `0`   | `Ativo`    | Conta ativa, acesso liberado       |
-| `1`   | `Inativo`  | Conta desativada                   |
-| `2`   | `Suspenso` | Conta suspensa administrativamente |
+- [Visao Geral](#visao-geral)
+- [Configuracao](#configuracao)
+- [Ciclo de Vida dos Tokens](#ciclo-de-vida-dos-tokens)
+- [Endpoints](#endpoints)
+  - [Autenticacao](#autenticacao)
+  - [Usuarios](#usuarios)
+- [Guia de Integracao para Outros Microsservicos](#guia-de-integracao-para-outros-microsservicos)
+- [Fluxo Completo de Autenticacao](#fluxo-completo-de-autenticacao)
+- [Respostas de Erro](#respostas-de-erro)
 
 ---
 
-## 🔐 Autenticação
+## Visao Geral
 
-A API utiliza **JWT Bearer Token**.  
-Inclua o header abaixo em todas as requisições protegidas:
+Esta API e responsavel exclusivamente por:
 
-```
-Authorization: Bearer {accessToken}
-```
+1. Registrar e gerenciar usuarios.
+2. Autenticar usuarios e emitir tokens JWT (access token) e refresh tokens.
+3. Renovar access tokens usando um refresh token valido.
+4. Encerrar sessoes especificas (logout).
+5. Redefinir senhas via e-mail.
 
-O `accessToken` expira conforme `Jwt:ExpiracaoMinutos` (padrão: 60 minutos).  
-Use o endpoint `refresh-token` para renová-lo sem precisar fazer login novamente.
-
----
-
-## 📡 Endpoints
-
-**Base URL:** `http://usuario.neurosky.com.br`
+Todas as outras APIs do Marketplace **validam o JWT localmente** â€” sem precisar chamar esta API a cada requisicao.
 
 ---
 
-### 👤 Usuários — `/api/Usuario`
+## Configuracao
 
-#### `POST /api/Usuario` — Criar usuário
-
-Não requer autenticação.
-
-**Body — Pessoa Física:**
 ```json
 {
-  "nome": "Ronaldo Grillo",
-  "email": "usuario@email.com",
-  "senha": "Senha@123",
-  "documento": "01234567890",
-  "tipoPessoa": 0,
-  "funcao": 0,
-  "dataNascimento": "2004-01-08",
-  "telefone": "54991283598"
+  "Jwt": {
+	"Chave": "<chave-secreta-forte>",
+	"Emissor": "Marketplace.Auth.API",
+	"Audiencia": "Marketplace.Auth.Clientes",
+	"ExpiracaoMinutos": "60",
+	"RefreshTokenExpiracaoDias": "7"
+  }
 }
 ```
 
-**Body — Pessoa Jurídica:**
-```json
-{
-  "nome": "Acme Comércio Ltda",
-  "nomeFantasia": "Acme Shop",
-  "email": "contato@acme.com",
-  "senha": "Senha@123",
-  "documento": "01234567000195",
-  "tipoPessoa": 1,
-  "funcao": 1,
-  "dataNascimento": "2010-03-20",
-  "telefone": "5433330000"
-}
-```
+| Parametro                   | Descricao                                          | Padrao |
+|-----------------------------|----------------------------------------------------|--------|
+| `Chave`                     | Chave HMAC-SHA256 para assinar o JWT               | â€”      |
+| `Emissor`                   | `iss` claim do token                               | â€”      |
+| `Audiencia`                 | `aud` claim do token                               | â€”      |
+| `ExpiracaoMinutos`          | Validade do access token em minutos                | `60`   |
+| `RefreshTokenExpiracaoDias` | Validade do refresh token em dias                  | `7`    |
 
-> - `documento`: apenas dígitos — CPF (11) para `tipoPessoa: 0`, CNPJ (14) para `tipoPessoa: 1`.  
-> - `nomeFantasia`, `dataNascimento` e `telefone` são opcionais.  
-> - `funcao` padrão é `0` (Comprador) quando omitido.
-
-**Resposta:** `201 Created`
-```json
-{
-  "id": "a7ebcf6b-dc0c-4d43-ae77-eff70a77fc64",
-  "nome": "Ronaldo Grillo",
-  "nomeFantasia": null,
-  "email": "usuario@email.com",
-  "documento": "01234567890",
-  "dataNascimento": "2004-01-08",
-  "telefone": "54991283598",
-  "tipoPessoa": 0,
-  "funcao": 0,
-  "status": 0,
-  "criadoEm": "2026-04-23T14:54:38Z"
-}
-```
+> **Outras APIs:** configure `AddJwtBearer` com a mesma `Chave`, `Emissor` e `Audiencia` â€” veja o exemplo em [Guia de Integracao](#guia-de-integracao-para-outros-microsservicos).
 
 ---
 
-#### `GET /api/Usuario/{id}` — Obter usuário por ID
+## Ciclo de Vida dos Tokens
 
-🔒 Requer autenticação.
+```
+Login
+  >> Novo Access Token  (JWT, valido por ExpiracaoMinutos â€” padrao 60 min)
+  >> Novo Refresh Token (opaco, valido por RefreshTokenExpiracaoDias â€” padrao 7 dias)
+  >> Sessoes anteriores NAO sao invalidadas (multi-sessao ativo)
 
-**Resposta:** `200 OK` — retorna `UsuarioDto`
+Enquanto o Refresh Token for valido:
+  POST /api/autenticacao/refresh-token
+	>> Novo Access Token  [gerado]
+	>> Refresh Token      [o mesmo â€” nao e rotacionado]
+
+POST /api/autenticacao/logout
+  >> Refresh Token informado e revogado imediatamente
+  >> Outras sessoes do mesmo usuario NAO sao afetadas
+
+Refresh Token expirado (apos 7 dias):
+  >> Usuario deve fazer login novamente
+```
+
+**Regras importantes:**
+
+- **Multi-sessao:** cada login gera um refresh token independente. Celular, notebook e outros clientes podem estar logados simultaneamente.
+- O refresh token **nao e rotacionado** a cada renovacao. O mesmo token continua valido ate expirar ou ser revogado via logout.
+- Logout **apenas revoga o token informado** â€” nao afeta outras sessoes.
+- Refresh token expirado ou revogado â†’ a API retorna `400` â†’ o cliente deve redirecionar para login.
 
 ---
 
-#### `PUT /api/Usuario/{id}` — Atualizar usuário
+## Endpoints
 
-🔒 Requer autenticação.
+### Autenticacao
+
+#### `POST /api/autenticacao/login`
+
+Autentica o usuario e retorna os tokens. Nao requer autenticacao.
 
 **Body:**
 ```json
 {
-  "nome": "Novo Nome",
-  "email": "novo@email.com",
-  "nomeFantasia": null,
-  "dataNascimento": "1995-06-15",
-  "telefone": "54999998888"
-}
-```
-
-> `nomeFantasia`, `dataNascimento` e `telefone` são opcionais.  
-> `documento` e `tipoPessoa` não podem ser alterados após o cadastro.
-
-**Resposta:** `200 OK` — retorna `UsuarioDto` atualizado
-
----
-
-#### `DELETE /api/Usuario/{id}` — Deletar usuário
-
-🔒 Requer autenticação + role `Administrador`.
-
-**Resposta:** `204 No Content`
-
----
-
-### 🔑 Autenticação — `/api/Autenticacao`
-
-#### `POST /api/Autenticacao/login` — Login
-
-Não requer autenticação.
-
-**Body:**
-```json
-{
-  "email": "usuario@email.com",
+  "email": "usuario@exemplo.com",
   "senha": "Senha@123"
 }
 ```
 
-**Resposta:** `200 OK`
+**Resposta `200 OK`:**
 ```json
 {
   "accessToken": "eyJhbGci...",
+  "accessTokenExpiresIn": "2026-01-15T11:00:00Z",
   "refreshToken": "GC5KxMwi...",
-  "expiraEm": "2026-04-30T15:01:18Z",
-  "usuarioId": "a7ebcf6b-dc0c-4d43-ae77-eff70a77fc64",
-  "nome": "Ronaldo Grillo",
-  "email": "usuario@email.com"
+  "refreshTokenExpiresIn": "2026-01-22T10:00:00Z",
+  "usuarioId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "nome": "Joao Silva",
+  "email": "usuario@exemplo.com"
 }
 ```
 
+| Campo                    | Descricao                                     |
+|--------------------------|-----------------------------------------------|
+| `accessToken`            | JWT para usar no header `Authorization`       |
+| `accessTokenExpiresIn`   | Quando o access token expira (UTC)            |
+| `refreshToken`           | Token opaco para renovar o access token       |
+| `refreshTokenExpiresIn`  | Quando o refresh token expira (UTC)           |
+| `usuarioId`              | ID do usuario autenticado                     |
+| `nome`                   | Nome do usuario                               |
+| `email`                  | E-mail do usuario                             |
+
+> O `refreshToken` e gerado em Base64 e pode conter `+`, `/` e `=`.
+> Sempre envie dentro de um body JSON â€” nunca via query string ou URL.
+
 ---
 
-#### `POST /api/Autenticacao/refresh-token` — Renovar tokens
+#### `POST /api/autenticacao/refresh-token`
 
-Não requer autenticação.
+Renova o access token usando um refresh token valido. **O refresh token nao muda.**
+Nao requer autenticacao.
 
 **Body:**
 ```json
 {
-  "token": "seu_refresh_token_aqui"
+  "token": "<refresh-token>"
 }
 ```
 
-> ⚠️ O `refreshToken` é gerado em Base64 e pode conter `+`, `/` e `=`.  
-> Sempre envie dentro de um body JSON — nunca via query string ou URL.
-
-**Resposta:** `200 OK`
+**Resposta `200 OK`:**
 ```json
 {
   "accessToken": "eyJhbGci...",
-  "refreshToken": "novo_refresh_token...",
-  "expiraEm": "2026-04-30T16:00:00Z"
+  "accessTokenExpiresIn": "2026-01-15T12:00:00Z"
 }
 ```
 
-> O refresh token anterior é **revogado** automaticamente a cada renovação.
+| Campo                   | Descricao                               |
+|-------------------------|-----------------------------------------|
+| `accessToken`           | Novo JWT                                |
+| `accessTokenExpiresIn`  | Quando o novo access token expira (UTC) |
+
+**Erros:**
+
+| Status | Situacao                                   |
+|--------|--------------------------------------------|
+| `400`  | Refresh token invalido ou expirado         |
+| `404`  | Usuario associado ao token nao encontrado  |
 
 ---
 
-#### `POST /api/Autenticacao/esqueci-senha` — Solicitar redefinição de senha
+#### `POST /api/autenticacao/logout`
 
-Não requer autenticação.
+Invalida o refresh token da sessao atual. Nao afeta outras sessoes do mesmo usuario.
+Nao requer autenticacao â€” funciona mesmo com access token expirado.
 
 **Body:**
 ```json
 {
-  "email": "usuario@email.com"
+  "token": "<refresh-token>"
 }
 ```
 
 **Resposta:** `204 No Content`
 
-> Um e-mail é enviado com um token alfanumérico válido por **2 horas**.
+> Retorna `204` independentemente de o token existir ou ja estar revogado â€” comportamento intencional para evitar enumeracao de tokens.
 
 ---
 
-#### `POST /api/Autenticacao/resetar-senha` — Redefinir senha
+#### `POST /api/autenticacao/esqueci-senha`
 
-Não requer autenticação.
+Envia um e-mail com token para redefinicao de senha (valido por 2 horas).
+Nao requer autenticacao.
 
 **Body:**
 ```json
 {
-  "email": "usuario@email.com",
+  "email": "usuario@exemplo.com"
+}
+```
+
+**Resposta:** `204 No Content`
+
+---
+
+#### `POST /api/autenticacao/resetar-senha`
+
+Redefine a senha usando o token recebido por e-mail.
+Nao requer autenticacao.
+
+**Body:**
+```json
+{
+  "email": "usuario@exemplo.com",
   "token": "449733fe7bd24393ac72ed975993b1fe",
   "novaSenha": "NovaSenha@456"
 }
@@ -256,20 +218,205 @@ Não requer autenticação.
 
 ---
 
-## ❌ Respostas de Erro
+### Usuarios
 
-| Status | Situação                                        |
-|--------|-------------------------------------------------|
-| `400`  | Dados inválidos ou regra de negócio violada     |
-| `401`  | Credenciais inválidas ou token ausente/expirado |
-| `404`  | Usuário não encontrado                          |
-| `500`  | Erro interno do servidor                        |
+#### `POST /api/usuario`
 
-**Exemplo `400` (validação):**
+Cria um novo usuario. Nao requer autenticacao.
+
+**Body:**
+```json
+{
+  "nome": "Joao Silva",
+  "email": "joao@exemplo.com",
+  "senha": "Senha@123",
+  "documento": "01234567890",
+  "tipoPessoa": 0,
+  "funcao": 0,
+  "nomeFantasia": null,
+  "dataNascimento": "1990-05-20",
+  "telefone": "54991234567"
+}
+```
+
+| Campo           | Tipo       | Obrigatorio | Descricao                                               |
+|-----------------|------------|-------------|---------------------------------------------------------|
+| `nome`          | string     | Sim         | Nome completo                                           |
+| `email`         | string     | Sim         | E-mail unico                                            |
+| `senha`         | string     | Sim         | Minimo 8 caracteres, letras maiusculas, numeros e simbolos |
+| `documento`     | string     | Sim         | CPF (PF) ou CNPJ (PJ), somente digitos                 |
+| `tipoPessoa`    | int        | Sim         | `0` = PessoaFisica, `1` = PessoaJuridica               |
+| `funcao`        | int        | Nao         | `0` = Comprador (padrao), `1` = Vendedor, `2` = Administrador |
+| `nomeFantasia`  | string     | Nao         | Apenas para PessoaJuridica                              |
+| `dataNascimento`| DateOnly   | Nao         | Formato `YYYY-MM-DD`                                    |
+| `telefone`      | string     | Nao         | Somente digitos                                         |
+
+**Resposta `201 Created`:**
+```json
+{
+  "id": "a7ebcf6b-dc0c-4d43-ae77-eff70a77fc64",
+  "nome": "Joao Silva",
+  "nomeFantasia": null,
+  "email": "joao@exemplo.com",
+  "documento": "01234567890",
+  "dataNascimento": "1990-05-20",
+  "telefone": "54991234567",
+  "tipoPessoa": 0,
+  "funcao": 0,
+  "status": 0,
+  "criadoEm": "2026-04-23T14:54:38Z"
+}
+```
+
+---
+
+#### `GET /api/usuario/{id}`
+
+Retorna os dados de um usuario pelo ID.
+Requer autenticacao.
+
+**Resposta `200 OK`:** `UsuarioDto` (mesmo schema do `POST /api/usuario`)
+
+---
+
+#### `PUT /api/usuario/{id}`
+
+Atualiza os dados de um usuario.
+Requer autenticacao.
+
+**Body:**
+```json
+{
+  "nome": "Joao Atualizado",
+  "email": "novo@exemplo.com",
+  "nomeFantasia": null,
+  "dataNascimento": "1990-05-20",
+  "telefone": "54999998888"
+}
+```
+
+> `nomeFantasia`, `dataNascimento` e `telefone` sao opcionais.
+> `documento` e `tipoPessoa` nao podem ser alterados apos o cadastro.
+
+**Resposta `200 OK`:** `UsuarioDto` atualizado
+
+---
+
+#### `DELETE /api/usuario/{id}`
+
+Remove um usuario.
+Requer autenticacao com role `Administrador`.
+
+**Resposta:** `204 No Content`
+
+---
+
+## Guia de Integracao para Outros Microsservicos
+
+### 1. Validar o JWT localmente
+
+Configure `AddJwtBearer` em cada servico com os mesmos parametros desta API:
+
+```csharp
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuerSigningKey = true,
+			IssuerSigningKey = new SymmetricSecurityKey(
+				Encoding.UTF8.GetBytes(configuration["Jwt:Chave"]!)),
+			ValidateIssuer = true,
+			ValidIssuer = "Marketplace.Auth.API",
+			ValidateAudience = true,
+			ValidAudience = "Marketplace.Auth.Clientes",
+			ValidateLifetime = true,
+			ClockSkew = TimeSpan.Zero
+		};
+	});
+```
+
+> Com `ClockSkew = TimeSpan.Zero`, o token expira exatamente em `accessTokenExpiresIn`, sem margem extra.
+
+### 2. Claims disponiveis no token
+
+| Claim   | Conteudo             |
+|---------|----------------------|
+| `sub`   | `usuarioId` (Guid)   |
+| `email` | E-mail do usuario    |
+| `name`  | Nome do usuario      |
+| `role`  | Funcao do usuario    |
+| `jti`   | ID unico do token    |
+
+### 3. Tratamento de 401 nos clientes
+
+```
+1. Chamada para qualquer API  â†’  401 Unauthorized
+2.   POST /api/autenticacao/refresh-token
+		200 OK  â†’  salvar novo accessToken e repetir a chamada original
+		400     â†’  refresh token expirado/revogado â†’ redirecionar para login
+```
+
+Nunca tente renovar o token de forma recursiva â€” se o refresh tambem falhar, force o logout.
+
+---
+
+## Fluxo Completo de Autenticacao
+
+```
+Cliente (dispositivo A)          Auth API                Outra API
+  |                                  |                       |
+  |-- POST /login ------------------->|                       |
+  |<-- { accessToken,                 |                       |
+  |      accessTokenExpiresIn,        |                       |
+  |      refreshToken,                |                       |
+  |      refreshTokenExpiresIn }      |                       |
+  |                                   |                       |
+  |  (dispositivo B tambem pode       |                       |
+  |   fazer login independentemente)  |                       |
+  |                                   |                       |
+  |-- GET /recurso (Bearer) -------------------------------->  |
+  |<-- 200 OK ---------------------------------------------- |
+  |                                   |                       |
+  |   (60 min depois)                 |                       |
+  |-- GET /recurso (Bearer) -------------------------------->  |
+  |<-- 401 Unauthorized ------------------------------------- |
+  |                                   |                       |
+  |-- POST /refresh-token ----------->|                       |
+  |<-- { accessToken,                 |                       |
+  |      accessTokenExpiresIn }       |                       |
+  |                                   |                       |
+  |-- GET /recurso (Bearer) -------------------------------->  |
+  |<-- 200 OK ---------------------------------------------- |
+  |                                   |                       |
+  |   (usuario clica em "sair")       |                       |
+  |-- POST /logout (refreshToken) --->|                       |
+  |<-- 204 No Content ----------------|                       |
+  |                                   |                       |
+  |   (7 dias depois â€” RT expirado,   |                       |
+  |    ou usuario fez logout)         |                       |
+  |-- POST /refresh-token ----------->|                       |
+  |<-- 400 Bad Request ---------------|                       |
+  |                                   |                       |
+  |-- [redirecionar para login]       |                       |
+```
+
+---
+
+## Respostas de Erro
+
+| Status | Situacao                                         |
+|--------|--------------------------------------------------|
+| `400`  | Dados invalidos ou regra de negocio violada      |
+| `401`  | Credenciais invalidas ou token ausente/expirado  |
+| `404`  | Usuario nao encontrado                           |
+| `500`  | Erro interno do servidor                         |
+
+**Exemplo `400` (validacao):**
 ```json
 {
   "erros": [
-    { "campo": "Email", "mensagem": "E-mail inválido." }
+	{ "campo": "Email", "mensagem": "E-mail invalido." }
   ]
 }
 ```
@@ -277,19 +424,6 @@ Não requer autenticação.
 **Exemplo `401`:**
 ```json
 {
-  "erro": "E-mail ou senha inválidos."
+  "erro": "E-mail ou senha invalidos."
 }
-```
-
----
-
-## 🔁 Fluxo Completo de Uso
-
-```
-1. POST /api/Usuario                        → Criar conta
-2. POST /api/Autenticacao/login             → Obter accessToken + refreshToken
-3. GET  /api/Usuario/{id}                   → Usar accessToken no header Authorization
-4. POST /api/Autenticacao/refresh-token     → Renovar tokens antes de expirar
-5. POST /api/Autenticacao/esqueci-senha     → Solicitar reset por e-mail
-6. POST /api/Autenticacao/resetar-senha     → Redefinir com o token recebido
 ```
